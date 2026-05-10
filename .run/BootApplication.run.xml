@@ -1,0 +1,23 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="BootApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+    <envs>
+      <env name="SEC_KEY" value="49bd2f98-8c2f-4f10-bd2f-988c2f2f105f" />
+      <env name="ACTIVE_PROFILE" value="dev" />
+      <env name="DB_HOST" value="localhost" />
+      <env name="DB_NAME" value="vaf_erp" />
+      <env name="DB_PORT" value="5432" />
+      <env name="DB_PWD" value="vaf" />
+      <env name="DB_SCHEMA" value="developer" />
+      <env name="DB_USER" value="vaf" />
+      <env name="SERVER_PORT" value="8082" />
+    </envs>
+    <module name="boot" />
+    <selectedOptions>
+      <option name="spring.boot.profiles" visible="false" />
+    </selectedOptions>
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.boilerplate.boot.BootApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

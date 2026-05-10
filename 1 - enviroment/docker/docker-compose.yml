@@ -1,0 +1,47 @@
+name: boilerplate
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: boilerplate-db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PWD}
+    ports:
+      - "${DB_PORT}:5432"
+    #    volumes:
+    #      - boilerplate_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ../..
+      dockerfile: 1 - enviroment/docker/context/Dockerfile
+    container_name: boilerplate-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ACTIVE_PROFILE: ${ACTIVE_PROFILE}
+      SERVER_PORT: ${SERVER_PORT}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_SCHEMA: ${DB_SCHEMA}
+      DB_USER: ${DB_USER}
+      DB_PWD: ${DB_PWD}
+      SEC_KEY: ${SEC_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    volumes:
+      - maven_cache:/root/.m2
+
+volumes:
+  boilerplate_data:
+  maven_cache:
