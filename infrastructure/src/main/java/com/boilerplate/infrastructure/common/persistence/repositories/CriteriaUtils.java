@@ -24,6 +24,7 @@ public class CriteriaUtils {
             try {
                 Object value = component.getAccessor().invoke(criteria);
                 if (value == null) continue;
+                if (value instanceof Collection<?> c && c.isEmpty()) continue;
 
                 Path<Object> path = resolvePath(root, annotation.value());
                 predicates.add(buildPredicate(cb, path, value, annotation.operator()));
