@@ -2,6 +2,7 @@ package com.boilerplate.web.middlewares;
 
 import com.boilerplate.domain.common.exceptions.ConflictException;
 import com.boilerplate.domain.common.exceptions.DomainException;
+import com.boilerplate.domain.common.exceptions.ExternalServiceException;
 import com.boilerplate.domain.common.exceptions.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -121,6 +122,15 @@ public class RestExceptionHandler {
         var pb = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
         pb.setTitle("authentication failed");
         pb.setDetail("invalid username or password");
+        return pb;
+    }
+
+    @ExceptionHandler(ExternalServiceException.class)
+    public ProblemDetail handleExternalService(ExternalServiceException ex) {
+        log.error("external service error — {}", ex.getMessage(), ex);
+        var pb = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+        pb.setTitle("external service error");
+        pb.setDetail(ex.getMessage());
         return pb;
     }
 
