@@ -7,6 +7,9 @@ import com.boilerplate.domain.common.entities.DomainEntity;
 import com.boilerplate.infrastructure.common.mapper.EntityMapper;
 import com.boilerplate.infrastructure.common.persistence.entities.PersistenceEntity;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -125,6 +128,7 @@ public class RepositoryImpl<
         var root = query.from(entityClass);
 
         query.where(CriteriaUtils.buildPredicates(criteria, root, cb));
+        applySorting(query, root, cb, pageable);
 
         var typedQuery = em.createQuery(query);
         typedQuery.setFirstResult(pageable.getOffset());
@@ -138,5 +142,13 @@ public class RepositoryImpl<
         int totalPages = (int) Math.ceil((double) total / pageable.size());
 
         return new Page<>(content, pageable.page(), pageable.size(), total, totalPages);
+    }
+
+    private void applySorting(CriteriaQuery<?> query, Root<?> root, CriteriaBuilder cb, Pageable pageable) {
+        if (pageable.sortBy() == null) return;
+        var order = "DESC".equalsIgnoreCase(pageable.sortDirection())
+                ? cb.desc(root.get(pageable.sortBy()))
+                : cb.asc(root.get(pageable.sortBy()));
+        query.orderBy(order);
     }
 }
