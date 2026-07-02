@@ -18,18 +18,18 @@ public abstract class StringValueObject extends ValueObject<String> {
         if (trimmed.isEmpty())
             throw createException(getClass().getSimpleName() + " cannot be empty");
 
-        return customValidate(trimmed);
+        customValidate(trimmed);
+        return trimmed;
     }
 
-    protected abstract String customValidate(String value);
+    protected void customValidate(String value) {}
 
     protected void checkLength(String value, int min, int max) {
-        if (value.length() < min)
-            throw createException("must have at least " + min + " characters");
-
-        if (value.length() > max)
-            throw createException("must have at most " + max + " characters");
+        if (value.length() < min || value.length() > max)
+            throw createException("must be between " + min + " and " + max + " characters");
     }
 
-    protected abstract DomainException createException(String message);
+    protected DomainException createException(String message) {
+        return new DomainException(message);
+    }
 }

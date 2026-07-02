@@ -1,6 +1,5 @@
 package com.boilerplate.domain.shared.vos;
 
-import com.boilerplate.domain.common.exceptions.DomainException;
 import com.boilerplate.domain.common.vos.StringValueObject;
 
 import java.util.regex.Pattern;
@@ -20,17 +19,14 @@ public final class Email extends StringValueObject {
     }
 
     @Override
-    protected String customValidate(String value) {
-        checkLength(value, 1, MAX_LENGTH);
-
-        if (!FORMAT.matcher(value).matches())
-            throw createException("invalid email format");
-
-        return value.toLowerCase();
+    protected String validate(String value) {
+        return super.validate(value).toLowerCase();
     }
 
     @Override
-    protected DomainException createException(String message) {
-        return new DomainException(message);
+    protected void customValidate(String value) {
+        checkLength(value, 1, MAX_LENGTH);
+        if (!FORMAT.matcher(value).matches())
+            throw createException("invalid email format");
     }
 }

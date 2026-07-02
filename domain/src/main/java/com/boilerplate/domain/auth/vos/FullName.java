@@ -1,6 +1,5 @@
 package com.boilerplate.domain.auth.vos;
 
-import com.boilerplate.domain.common.exceptions.DomainException;
 import com.boilerplate.domain.common.vos.StringValueObject;
 
 public final class FullName extends StringValueObject {
@@ -16,13 +15,7 @@ public final class FullName extends StringValueObject {
     }
 
     @Override
-    protected String customValidate(String value) {
+    protected void customValidate(String value) {
         checkLength(value, MIN_LENGTH, MAX_LENGTH);
-        return value;
-    }
-
-    @Override
-    protected DomainException createException(String message) {
-        return new DomainException(message);
     }
 }

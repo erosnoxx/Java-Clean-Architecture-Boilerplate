@@ -31,25 +31,10 @@ public final class Password extends StringValueObject {
         if (trimmed.isEmpty())
             throw new DomainException("Password cannot be empty");
 
-        if (!hashed) {
-            if (trimmed.length() < MIN_LENGTH)
-                throw new DomainException("must have at least 8 characters");
-
-            if (trimmed.length() > MAX_LENGTH)
-                throw new DomainException("must have at most 128 characters");
-        }
+        if (!hashed && (trimmed.length() < MIN_LENGTH || trimmed.length() > MAX_LENGTH))
+            throw new DomainException("must be between " + MIN_LENGTH + " and " + MAX_LENGTH + " characters");
 
         return trimmed;
-    }
-
-    @Override
-    protected String customValidate(String value) {
-        return value;
-    }
-
-    @Override
-    protected DomainException createException(String message) {
-        return new DomainException(message);
     }
 
     public boolean isHashed() {
