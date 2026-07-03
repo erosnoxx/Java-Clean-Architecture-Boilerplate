@@ -1,7 +1,9 @@
 package com.boilerplate.domain.auth.entities;
 
 import com.boilerplate.domain.auth.enums.UserRole;
+import com.boilerplate.domain.auth.enums.UserStatus;
 import com.boilerplate.domain.auth.events.UserCreatedEvent;
+import com.boilerplate.domain.auth.statemachine.UserStateMachine;
 import com.boilerplate.domain.shared.vos.Email;
 import com.boilerplate.domain.auth.vos.FullName;
 import com.boilerplate.domain.auth.vos.Password;
@@ -9,6 +11,7 @@ import com.boilerplate.domain.common.entities.DomainEntity;
 import lombok.Getter;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 @Getter
 public class User extends DomainEntity<UUID> {
@@ -17,7 +20,7 @@ public class User extends DomainEntity<UUID> {
     private Email email;
     private Password password;
     private UserRole role;
-    private boolean active;
+    private UserStatus status;
 
     private User() {}
 
@@ -34,7 +37,7 @@ public class User extends DomainEntity<UUID> {
         user.email = email;
         user.password = hashedPassword;
         user.role = role;
-        user.active = true;
+        user.status = UserStatus.ACTIVE;
 
         user.registerEvent(new UserCreatedEvent(
                 user.getId(),
@@ -50,7 +53,7 @@ public class User extends DomainEntity<UUID> {
             Email email,
             Password hashedPassword,
             UserRole role,
-            boolean active,
+            UserStatus status,
             OffsetDateTime createdAt,
             OffsetDateTime updatedAt
     ) {
@@ -61,13 +64,23 @@ public class User extends DomainEntity<UUID> {
         user.email = email;
         user.password = hashedPassword;
         user.role = role;
-        user.active = active;
+        user.status = status;
         user.setTimestamps(createdAt, updatedAt);
         return user;
     }
 
-    public void toggleActive() {
-        active = !active;
+    public void activate() { transition(UserStateMachine::activate); }
+    public void deactivate() { transition(UserStateMachine::deactivate); }
+    public void suspend() { transition(UserStateMachine::suspend); }
+
+    public boolean isActive() { return status == UserStatus.ACTIVE; }
+
+    private void transition(Consumer<UserStateMachine> action) {
+        var sm = UserStateMachine.of(this);
+        action.accept(sm);
+        this.status = sm.getValue();
+        var event = sm.getEvent();
+        if (event != null) registerEvent(event);
     }
 
     public void promote() {

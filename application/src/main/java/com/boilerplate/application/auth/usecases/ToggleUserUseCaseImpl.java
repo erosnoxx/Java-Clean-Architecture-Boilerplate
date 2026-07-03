@@ -16,7 +16,7 @@ public class ToggleUserUseCaseImpl implements ToggleUserUseCase {
         var user = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        user.toggleActive();
+        if (user.isActive()) user.deactivate(); else user.activate();
         repository.save(user);
     }
 }

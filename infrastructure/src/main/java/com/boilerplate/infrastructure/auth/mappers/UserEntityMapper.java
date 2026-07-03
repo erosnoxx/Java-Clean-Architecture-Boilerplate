@@ -16,7 +16,7 @@ public class UserEntityMapper implements EntityMapper<User, UserEntity> {
         entity.setEmail(domain.getEmail().getValue());
         entity.setRole(domain.getRole());
         entity.setPasswordHash(domain.getPassword().getValue());
-        entity.setActive(domain.isActive());
+        entity.setStatus(domain.getStatus());
 
         return entity;
     }
@@ -29,7 +29,7 @@ public class UserEntityMapper implements EntityMapper<User, UserEntity> {
                 Email.of(persistence.getEmail()),
                 Password.fromHashed(persistence.getPasswordHash()),
                 persistence.getRole(),
-                persistence.isActive(),
+                persistence.getStatus(),
                 persistence.getCreatedAt(),
                 persistence.getUpdatedAt()
         );

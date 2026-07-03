@@ -1,9 +1,14 @@
 package com.boilerplate.domain.auth.entities;
 
 import com.boilerplate.domain.auth.enums.UserRole;
+import com.boilerplate.domain.auth.enums.UserStatus;
+import com.boilerplate.domain.auth.events.UserActivatedEvent;
 import com.boilerplate.domain.auth.events.UserCreatedEvent;
+import com.boilerplate.domain.auth.events.UserDeactivatedEvent;
+import com.boilerplate.domain.auth.events.UserSuspendedEvent;
 import com.boilerplate.domain.auth.vos.FullName;
 import com.boilerplate.domain.auth.vos.Password;
+import com.boilerplate.domain.common.exceptions.DomainException;
 import com.boilerplate.domain.shared.vos.Email;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +39,7 @@ class UserTest {
         assertThat(user.getRole()).isEqualTo(role);
 
         assertThat(user.isActive()).isTrue();
+        assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
 
         // lifecycle fields should start null until persistence layer fills them
         assertThat(user.getCreatedAt()).isNull();
@@ -133,7 +139,7 @@ class UserTest {
                 Email.of("joao@example.com"),
                 Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
                 UserRole.ADMIN,
-                false,
+                UserStatus.INACTIVE,
                 createdAt,
                 updatedAt
         );
@@ -150,6 +156,7 @@ class UserTest {
                 .isEqualTo(UserRole.ADMIN);
 
         assertThat(user.isActive()).isFalse();
+        assertThat(user.getStatus()).isEqualTo(UserStatus.INACTIVE);
 
         assertThat(user.getCreatedAt())
                 .isEqualTo(createdAt);
@@ -189,7 +196,7 @@ class UserTest {
                         Email.of("joao@example.com"),
                         rawPassword,
                         UserRole.USER,
-                        true,
+                        UserStatus.ACTIVE,
                         null,
                         null
                 )
@@ -199,8 +206,8 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("Should toggle active status")
-    void shouldToggleActiveStatus() {
+    @DisplayName("Should deactivate an active user")
+    void shouldDeactivateActiveUser() {
         var user = User.create(
                 FullName.of("João Silva"),
                 Email.of("joao@example.com"),
@@ -210,13 +217,221 @@ class UserTest {
 
         assertThat(user.isActive()).isTrue();
 
-        user.toggleActive();
+        user.pullEvents(); // clear creation event
+        user.deactivate();
 
         assertThat(user.isActive()).isFalse();
+        assertThat(user.getStatus()).isEqualTo(UserStatus.INACTIVE);
+    }
 
-        user.toggleActive();
+    @Test
+    @DisplayName("Should activate an inactive user")
+    void shouldActivateInactiveUser() {
+        var user = User.reconstitute(
+                UUID.randomUUID(),
+                FullName.of("João Silva"),
+                Email.of("joao@example.com"),
+                Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
+                UserRole.USER,
+                UserStatus.INACTIVE,
+                null, null
+        );
+
+        user.activate();
 
         assertThat(user.isActive()).isTrue();
+        assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("Should suspend an active user")
+    void shouldSuspendActiveUser() {
+        var user = User.create(
+                FullName.of("João Silva"),
+                Email.of("joao@example.com"),
+                Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
+                UserRole.USER
+        );
+
+        user.pullEvents(); // clear creation event
+        user.suspend();
+
+        assertThat(user.isActive()).isFalse();
+        assertThat(user.getStatus()).isEqualTo(UserStatus.SUSPENDED);
+    }
+
+    @Test
+    @DisplayName("Should activate a suspended user")
+    void shouldActivateSuspendedUser() {
+        var user = User.reconstitute(
+                UUID.randomUUID(),
+                FullName.of("João Silva"),
+                Email.of("joao@example.com"),
+                Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
+                UserRole.USER,
+                UserStatus.SUSPENDED,
+                null, null
+        );
+
+        user.activate();
+
+        assertThat(user.isActive()).isTrue();
+        assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("Should throw DomainException when activating already active user")
+    void shouldThrowWhenActivatingActiveUser() {
+        var user = User.create(
+                FullName.of("João Silva"),
+                Email.of("joao@example.com"),
+                Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
+                UserRole.USER
+        );
+
+        assertThatThrownBy(user::activate)
+                .isInstanceOf(DomainException.class)
+                .hasMessage("user is already active");
+    }
+
+    @Test
+    @DisplayName("Should throw DomainException when deactivating already inactive user")
+    void shouldThrowWhenDeactivatingInactiveUser() {
+        var user = User.reconstitute(
+                UUID.randomUUID(),
+                FullName.of("João Silva"),
+                Email.of("joao@example.com"),
+                Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
+                UserRole.USER,
+                UserStatus.INACTIVE,
+                null, null
+        );
+
+        assertThatThrownBy(user::deactivate)
+                .isInstanceOf(DomainException.class)
+                .hasMessage("user is already inactive");
+    }
+
+    @Test
+    @DisplayName("Should throw DomainException when suspending inactive user")
+    void shouldThrowWhenSuspendingInactiveUser() {
+        var user = User.reconstitute(
+                UUID.randomUUID(),
+                FullName.of("João Silva"),
+                Email.of("joao@example.com"),
+                Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
+                UserRole.USER,
+                UserStatus.INACTIVE,
+                null, null
+        );
+
+        assertThatThrownBy(user::suspend)
+                .isInstanceOf(DomainException.class)
+                .hasMessage("cannot suspend an inactive user");
+    }
+
+    @Test
+    @DisplayName("Should throw DomainException when deactivating suspended user")
+    void shouldThrowWhenDeactivatingSuspendedUser() {
+        var user = User.reconstitute(
+                UUID.randomUUID(),
+                FullName.of("João Silva"),
+                Email.of("joao@example.com"),
+                Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
+                UserRole.USER,
+                UserStatus.SUSPENDED,
+                null, null
+        );
+
+        assertThatThrownBy(user::deactivate)
+                .isInstanceOf(DomainException.class)
+                .hasMessage("cannot deactivate a suspended user — activate first");
+    }
+
+    @Test
+    @DisplayName("Should throw DomainException when suspending already suspended user")
+    void shouldThrowWhenSuspendingAlreadySuspendedUser() {
+        var user = User.reconstitute(
+                UUID.randomUUID(),
+                FullName.of("João Silva"),
+                Email.of("joao@example.com"),
+                Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
+                UserRole.USER,
+                UserStatus.SUSPENDED,
+                null, null
+        );
+
+        assertThatThrownBy(user::suspend)
+                .isInstanceOf(DomainException.class)
+                .hasMessage("user is already suspended");
+    }
+
+    @Test
+    @DisplayName("Should register UserDeactivatedEvent when deactivating")
+    void shouldRegisterUserDeactivatedEvent() {
+        var user = User.create(
+                FullName.of("João Silva"),
+                Email.of("joao@example.com"),
+                Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
+                UserRole.USER
+        );
+
+        user.pullEvents(); // clear creation event
+        user.deactivate();
+
+        var events = user.pullEvents();
+
+        assertThat(events).hasSize(1);
+        assertThat(events.getFirst()).isInstanceOf(UserDeactivatedEvent.class);
+
+        var event = (UserDeactivatedEvent) events.getFirst();
+        assertThat(event.userId()).isEqualTo(user.getId());
+    }
+
+    @Test
+    @DisplayName("Should register UserActivatedEvent when activating")
+    void shouldRegisterUserActivatedEvent() {
+        var user = User.reconstitute(
+                UUID.randomUUID(),
+                FullName.of("João Silva"),
+                Email.of("joao@example.com"),
+                Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
+                UserRole.USER,
+                UserStatus.INACTIVE,
+                null, null
+        );
+
+        user.activate();
+
+        var events = user.pullEvents();
+
+        assertThat(events).hasSize(1);
+        assertThat(events.getFirst()).isInstanceOf(UserActivatedEvent.class);
+
+        var event = (UserActivatedEvent) events.getFirst();
+        assertThat(event.userId()).isEqualTo(user.getId());
+    }
+
+    @Test
+    @DisplayName("Should register UserSuspendedEvent when suspending")
+    void shouldRegisterUserSuspendedEvent() {
+        var user = User.create(
+                FullName.of("João Silva"),
+                Email.of("joao@example.com"),
+                Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
+                UserRole.USER
+        );
+
+        user.pullEvents(); // clear creation event
+        user.suspend();
+
+        var events = user.pullEvents();
+
+        assertThat(events).hasSize(1);
+        assertThat(events.getFirst()).isInstanceOf(UserSuspendedEvent.class);
+
+        var event = (UserSuspendedEvent) events.getFirst();
+        assertThat(event.userId()).isEqualTo(user.getId());
     }
 
     @Test
@@ -363,7 +578,7 @@ class UserTest {
         user.changeEmail(Email.of("maria@example.com"));
         user.changePassword(Password.fromHashed("$2a$10$newhashpassword"));
         user.promote();
-        user.toggleActive();
+        user.deactivate();
 
         assertThat(user.getId()).isEqualTo(originalId);
     }

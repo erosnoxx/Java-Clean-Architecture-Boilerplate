@@ -1,6 +1,7 @@
 package com.boilerplate.infrastructure.auth.data.entities;
 
 import com.boilerplate.domain.auth.enums.UserRole;
+import com.boilerplate.domain.auth.enums.UserStatus;
 import com.boilerplate.infrastructure.common.persistence.entities.BaseJpaEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -26,8 +27,9 @@ public class UserEntity extends BaseJpaEntity<UUID> implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private boolean active;
+    private UserStatus status;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -46,6 +48,11 @@ public class UserEntity extends BaseJpaEntity<UUID> implements UserDetails {
     @Override
     public String getUsername() {
         return this.email;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return status == UserStatus.ACTIVE;
     }
 
 }

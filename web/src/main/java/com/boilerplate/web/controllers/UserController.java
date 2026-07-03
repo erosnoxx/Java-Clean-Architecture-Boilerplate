@@ -2,6 +2,7 @@ package com.boilerplate.web.controllers;
 
 import com.boilerplate.application.auth.contracts.usecases.users.*;
 import com.boilerplate.application.auth.criteria.UserCriteria;
+import com.boilerplate.domain.auth.enums.UserStatus;
 import com.boilerplate.application.auth.schemas.request.ChangePasswordRequest;
 import com.boilerplate.application.auth.schemas.request.UpdateUserRequest;
 import com.boilerplate.application.auth.schemas.response.UserResponse;
@@ -47,13 +48,13 @@ public class UserController {
     public ResponseEntity<Page<UserResponse>> list(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String role,
-            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) UserStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortDirection
     ) {
-        var criteria = new UserCriteria(name, role, active);
+        var criteria = new UserCriteria(name, role, status);
         var pageable = Pageable.of(page, size, sortBy, sortDirection);
         return ResponseEntity.ok(list.execute(criteria, pageable));
     }
