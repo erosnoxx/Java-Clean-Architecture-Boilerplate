@@ -7,6 +7,7 @@ import com.boilerplate.domain.auth.vos.FullName;
 import com.boilerplate.domain.auth.vos.Password;
 import com.boilerplate.domain.common.entities.DomainEntity;
 import lombok.Getter;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
@@ -49,7 +50,9 @@ public class User extends DomainEntity<UUID> {
             Email email,
             Password hashedPassword,
             UserRole role,
-            boolean active
+            boolean active,
+            OffsetDateTime createdAt,
+            OffsetDateTime updatedAt
     ) {
         checkIfPasswordIsHashed(hashedPassword);
         var user = new User();
@@ -59,6 +62,7 @@ public class User extends DomainEntity<UUID> {
         user.password = hashedPassword;
         user.role = role;
         user.active = active;
+        user.setTimestamps(createdAt, updatedAt);
         return user;
     }
 

@@ -133,11 +133,10 @@ class UserTest {
                 Email.of("joao@example.com"),
                 Password.fromHashed("$2a$10$abcdefghijklmnopqrstuv"),
                 UserRole.ADMIN,
-                false
+                false,
+                createdAt,
+                updatedAt
         );
-
-        user.setCreatedAt(createdAt);
-        user.setUpdatedAt(updatedAt);
 
         assertThat(user.getId()).isEqualTo(id);
 
@@ -190,7 +189,9 @@ class UserTest {
                         Email.of("joao@example.com"),
                         rawPassword,
                         UserRole.USER,
-                        true
+                        true,
+                        null,
+                        null
                 )
         )
                 .isInstanceOf(IllegalArgumentException.class)

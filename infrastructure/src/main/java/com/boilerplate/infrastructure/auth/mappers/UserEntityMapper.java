@@ -23,17 +23,15 @@ public class UserEntityMapper implements EntityMapper<User, UserEntity> {
 
     @Override
     public User toDomain(UserEntity persistence) {
-        var user = User.reconstitute(
+        return User.reconstitute(
                 persistence.getId(),
                 FullName.of(persistence.getName()),
                 Email.of(persistence.getEmail()),
                 Password.fromHashed(persistence.getPasswordHash()),
                 persistence.getRole(),
-                persistence.isActive()
+                persistence.isActive(),
+                persistence.getCreatedAt(),
+                persistence.getUpdatedAt()
         );
-
-        user.setCreatedAt(persistence.getCreatedAt());
-        user.setUpdatedAt(persistence.getUpdatedAt());
-        return user;
     }
 }
